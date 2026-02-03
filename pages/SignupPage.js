@@ -44,7 +44,10 @@ class SignupPage {
 
     // Previous therapy question
     this.previousTherapyPrompt = page.getByText(/have you ever been in therapy before\?/i);
-    
+
+    // BetterHelp usage question (appears if previousTherapy is Yes)
+    this.usedBetterHelpPrompt = page.getByText(/was your previous therapy through betterhelp\?/i);
+
   }
 
   // POM Navigation Workflow Directions
@@ -272,6 +275,20 @@ class SignupPage {
   async selectPreviousTherapy(answer) {
     // Values: 'Yes', 'No'
     const selector = `label[for="question-PreviousTherapy-${answer}"]`;
+    const label = this.page.locator(selector);
+
+    await label.scrollIntoViewIfNeeded();
+    await label.click();
+  }
+
+  // BetterHelp usage question (only appears if previousTherapy is Yes)
+  async waitForUsedBetterHelpQuestion() {
+    await expect(this.usedBetterHelpPrompt).toBeVisible({ timeout: 10000 });
+  }
+
+  async selectUsedBetterHelp(answer) {
+    // Values: 'Yes', 'No'
+    const selector = `label[for="question-PreviousTherapyBetterhelp-${answer}"]`;
     const label = this.page.locator(selector);
 
     await label.scrollIntoViewIfNeeded();

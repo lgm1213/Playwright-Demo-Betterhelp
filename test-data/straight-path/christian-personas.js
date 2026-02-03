@@ -13,6 +13,7 @@ const christianTherapyYesSpiritual = createPersona('Christian_TherapyYes_Spiritu
   christianTherapy: 'Yes',
   spiritual: 'Yes',
   previousTherapy: 'Yes',
+  usedBetterHelp: 'No',
 });
 
 const christianTherapyYesNotSpiritual = createPersona('Christian_TherapyYes_NotSpiritual_NoTherapyBefore', {
@@ -36,6 +37,7 @@ const christianTherapyNoSpiritual = createPersona('Christian_TherapyNo_Spiritual
   christianTherapy: 'No',
   spiritual: 'Yes',
   previousTherapy: 'Yes',
+  usedBetterHelp: 'Yes',
 });
 
 const christianTherapyNoNotSpiritual = createPersona('Christian_TherapyNo_NotSpiritual_NoTherapyBefore', {

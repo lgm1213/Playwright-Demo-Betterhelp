@@ -50,6 +50,12 @@ test.describe('BetterHelp Signup - Straight Pathway', () => {
         // Previous therapy question
         await signup.waitForPreviousTherapyQuestion();
         await signup.selectPreviousTherapy(persona.previousTherapy);
+
+        // If previousTherapy is Yes, answer the BetterHelp usage question
+        if (persona.previousTherapy === 'Yes') {
+          await signup.waitForUsedBetterHelpQuestion();
+          await signup.selectUsedBetterHelp(persona.usedBetterHelp);
+        }
       });
     }
 
@@ -82,6 +88,12 @@ test.describe('BetterHelp Signup - Straight Pathway', () => {
         // Previous therapy question
         await signup.waitForPreviousTherapyQuestion();
         await signup.selectPreviousTherapy(persona.previousTherapy);
+
+        // If previousTherapy is Yes, answer the BetterHelp usage question
+        if (persona.previousTherapy === 'Yes') {
+          await signup.waitForUsedBetterHelpQuestion();
+          await signup.selectUsedBetterHelp(persona.usedBetterHelp);
+        }
       });
     }
 
@@ -122,6 +134,12 @@ test.describe('BetterHelp Signup - Straight Pathway', () => {
         // Previous therapy question
         await signup.waitForPreviousTherapyQuestion();
         await signup.selectPreviousTherapy(persona.previousTherapy);
+
+        // If previousTherapy is Yes, answer the BetterHelp usage question
+        if (persona.previousTherapy === 'Yes') {
+          await signup.waitForUsedBetterHelpQuestion();
+          await signup.selectUsedBetterHelp(persona.usedBetterHelp);
+        }
       });
     }
 
@@ -162,6 +180,12 @@ test.describe('BetterHelp Signup - Straight Pathway', () => {
         // Previous therapy question
         await signup.waitForPreviousTherapyQuestion();
         await signup.selectPreviousTherapy(persona.previousTherapy);
+
+        // If previousTherapy is Yes, answer the BetterHelp usage question
+        if (persona.previousTherapy === 'Yes') {
+          await signup.waitForUsedBetterHelpQuestion();
+          await signup.selectUsedBetterHelp(persona.usedBetterHelp);
+        }
       });
     }
 

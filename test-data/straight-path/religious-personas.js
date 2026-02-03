@@ -12,6 +12,7 @@ const religiousVeryImportant = createPersona('Straight_Man_Jewish_VeryImportant'
   religion: 'Judaism',
   spiritual: 'Yes',
   previousTherapy: 'Yes',
+  usedBetterHelp: 'No',
 });
 
 const religiousImportant = createPersona('Straight_Woman_Muslim_Important', {
@@ -32,6 +33,7 @@ const religiousSomewhatImportant = createPersona('Straight_Man_Buddhist_Somewhat
   religion: 'Buddhism',
   spiritual: 'No',
   previousTherapy: 'Yes',
+  usedBetterHelp: 'Yes',
 });
 
 const religiousNotImportant = createPersona('Straight_Woman_NotReligious', {
