@@ -53,6 +53,8 @@ class SignupPage {
     this.emailInput = page.getByRole('textbox', { name: 'Email' });
     this.passwordInput = page.getByRole('textbox', { name: 'Password' });
     this.loginButton = page.getByTestId('eap-admin-login-submit');
+    this.loggedInHeader = page.getByTestId('welcome-header');
+    this.twoFactorPrompt = page.getByText(/enter your 5-digit verification code/i);
 
   }
 
@@ -320,7 +322,14 @@ class SignupPage {
     await this.login(persona.email, persona.password);
   }
 
-  
+  async verifyLoginSuccess() {
+    // if the Login succeeded we will reach the dashboard OR 2FA page
+    await expect(
+      this.loggedInHeader.or(this.twoFactorPrompt)
+    ).toBeVisible({ timeout: 10000 });
+  }
+
+
 }
 
 module.exports = { SignupPage };

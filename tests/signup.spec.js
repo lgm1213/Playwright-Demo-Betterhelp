@@ -284,8 +284,7 @@ test.describe('BetterHelp Signup - Returning User Pathway', () => {
 
         // Login with existing credentials
         await signup.performReturningUserLogin(persona);
-
-        // TODO: Add assertions for successful login (dashboard, welcome message, etc.)
+        await signup.verifyLoginSuccess();
       });
     }
 
