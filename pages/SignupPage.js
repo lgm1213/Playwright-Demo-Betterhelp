@@ -21,7 +21,7 @@ class SignupPage {
 
     // Age Selections
     this.agePrompt = page.getByText(/how old are you\?/i);
-    this.ageTrigger = page.locator('#mui-component-select-question-Age');
+    this.ageTrigger = page.getByRole('button', { name: /select your age/i });
     
 
     // Identity/Orientation Selections
@@ -56,12 +56,25 @@ class SignupPage {
     this.loggedInHeader = page.getByTestId('welcome-header');
     this.twoFactorPrompt = page.getByText(/enter your 5-digit verification code/i);
 
+    // Cookie consent banner
+    this.cookieConsentButton = page.getByRole('button', { name: 'I Agree' });
+
   }
 
   // POM Navigation Workflow Directions
   async navigate() {
     await this.page.goto('/')
+    await this.dismissCookieConsent()
     await this.getStartedButton.click()
+  }
+
+  async dismissCookieConsent() {
+    // Dismiss cookie banner if present (don't fail if not shown)
+    try {
+      await this.cookieConsentButton.click({ timeout: 3000 });
+    } catch {
+      // Cookie banner not present or already dismissed
+    }
   }
 
   async goToPreviousQuestion() {
@@ -97,7 +110,6 @@ class SignupPage {
   async selectGender(gender) {
     // Wait for gender prompt to confirm we're on the right page
     await expect(this.genderPrompt).toBeVisible({ timeout: 10000 });
-    await this.genderPrompt.scrollIntoViewIfNeeded();
 
     // Primary options: Man, Woman
     // More Options require clicking the "More options" button first
@@ -127,8 +139,11 @@ class SignupPage {
 
     const labelId = genderLabelMap[gender] || gender;
     const label = this.page.locator(`label[for="question-GenderIdentity-${labelId}"]`);
-    await label.scrollIntoViewIfNeeded();
-    await label.click();
+    // Wait for the label to be visible and actionable (carousel slide active)
+    await label.waitFor({ state: 'visible' });
+    // Focus the label and press Enter to avoid carousel overlay interception
+    await label.focus();
+    await label.press('Enter');
 
     // "Other" gender option requires entering text in an input field and clicking the Next button
     if (gender === "Other") {
@@ -161,7 +176,7 @@ class SignupPage {
   async startQuestionnaireBasics(persona) {
     await this.navigate();
     await this.selectIndividualTherapy();
-    await this.selectCountry('United States');
+    // Country defaults to "United States" - just proceed
     await this.proceed();
 
     await this.selectGender(persona.gender);
