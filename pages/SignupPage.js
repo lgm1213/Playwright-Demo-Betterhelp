@@ -10,23 +10,25 @@ class SignupPage {
     this.nextButton = page.getByTestId('next-button');
     this.previousQuestionButton = page.getByTestId('back-button');
 
+    //Questionnaire Starts
+    this.questionnaireContentLabel = page.getByTestId("questionnaire-content-label")
+
     // Therapy Type
-    this.individualTitle = page.locator('label', { hasText: 'Individual'});
+    this.individualTherapy = page.getByText('Individual (for myself)');
 
     // Country Selection
-    this.countryTrigger = page.getByRole('combobox');
+    this.countryTrigger = page.getByTestId('questionnaire-react-dropdown-trigger');
+    this.countryDropdownOptions = page.getByTestId('questionnaire-react-dropdown-options');
 
     // Gender Selections
     this.genderPrompt = page.getByText(/what is your gender identity\?/i);
 
     // Age Selections
     this.agePrompt = page.getByText(/how old are you\?/i);
-    this.ageTrigger = page.locator('#mui-component-select-question-Age');
-    
+    this.ageTrigger = page.getByRole('button', { name: /select your age/i });
 
     // Identity/Orientation Selections
     this.identifyPrompt = page.getByText(/how do you identify\?/i);
-    this.menuContainer = page.getByRole('listbox');
     this.lgbtqSpecialistPrompt = page.getByText(/Would you like to be matched with a therapist who specializes in LGBTQ\+ issues\?/i);
 
     // Relationship Status Selection
@@ -53,15 +55,28 @@ class SignupPage {
     this.emailInput = page.getByRole('textbox', { name: 'Email' });
     this.passwordInput = page.getByRole('textbox', { name: 'Password' });
     this.loginButton = page.getByTestId('eap-admin-login-submit');
-    this.loggedInHeader = page.getByTestId('welcome-header');
+    this.loggedInHeader = page.getByTestId('client-header-nick-name');
     this.twoFactorPrompt = page.getByText(/enter your 5-digit verification code/i);
 
+    // Cookie consent banner
+    this.cookieConsentButton = page.getByRole('button', { name: 'I Agree' });
   }
 
   // POM Navigation Workflow Directions
   async navigate() {
     await this.page.goto('/')
-    await this.getStartedButton.click()
+    await this.dismissCookieConsent()
+    await this.getStartedButton.click();
+    await expect(this.questionnaireContentLabel).toBeVisible();
+  }
+
+  async dismissCookieConsent() {
+    // Dismiss cookie banner if present (don't fail if not shown)
+    try {
+      await this.cookieConsentButton.click({ timeout: 3000 });
+    } catch {
+      // Cookie banner not present or already dismissed
+    }
   }
 
   async goToPreviousQuestion() {
@@ -69,27 +84,23 @@ class SignupPage {
     await this.previousQuestionButton.click({ force: true });
   }
 
-  async selectMoreOptions() {
-    await this.moreOptions.waitFor({ state: 'visible'});
-    await this.moreOptions.click();
-  }
-
   async proceed() {
+    await this.nextButton.waitFor({ state: 'visible' });
     await this.nextButton.click();
   }
 
   async selectIndividualTherapy() {
-    await this.individualTitle.click();
+    await this.individualTherapy.waitFor({ state: 'visible' });
+    await this.individualTherapy.click();
   }
 
   // POM Questionnaire Prompts
   async selectCountry(name) {
-    // Click the trigger and wait for the menu to render
     await this.countryTrigger.click();
-    await this.menuContainer.waitFor({ state: 'visible'});
+    await this.countryDropdownOptions.waitFor({ state: 'visible' });
 
-    // Finds the specific option within the menu
-    const option = this.menuContainer.getByRole('option', { name, exact: true});
+    // The selected option includes "checkmark" in its accessible name
+    const option = this.page.getByRole('option', { name: `${name} checkmark` });
     await option.scrollIntoViewIfNeeded();
     await option.click();
   }
@@ -97,47 +108,26 @@ class SignupPage {
   async selectGender(gender) {
     // Wait for gender prompt to confirm we're on the right page
     await expect(this.genderPrompt).toBeVisible({ timeout: 10000 });
-    await this.genderPrompt.scrollIntoViewIfNeeded();
 
-    // Primary options: Man, Woman
-    // More Options require clicking the "More options" button first
+    // More Options genders require clicking the "More options" button first
     const moreOptionsGenders = ["Non Binary", "Transfeminine", "Transmasculine", "Agender", "I don't know", "Prefer not to say", "Other"];
 
-    // Map display values to label for attribute IDs
-    const genderLabelMap = {
-      "Man": "Man",
-      "Woman": "Woman",
-      "Non Binary": "NonBinary",
-      "Transfeminine": "Transfeminine",
-      "Transmasculine": "Transmasculine",
-      "Agender": "Agender",
-      "I don't know": "Unknown",
-      "Prefer not to say": "PreferNotToSay",
-      "Other": "Other"
-    };
+    // Scope to gender question container
+    const questionContainer = this.page.getByRole('listitem').filter({
+      has: this.genderPrompt
+    });
 
     if (moreOptionsGenders.includes(gender)) {
-      // Finds the "More Options" button within the gender question container
-      const moreOptionsBtn = this.page.getByRole('button', { name: 'More options' }).filter({ visible: true });
-      await moreOptionsBtn.scrollIntoViewIfNeeded();
-      await moreOptionsBtn.click();
-      // Waits for options to expand
-      await this.page.waitForTimeout(500);
+      await questionContainer.getByRole('button', { name: 'More options' }).click();
     }
 
-    const labelId = genderLabelMap[gender] || gender;
-    const label = this.page.locator(`label[for="question-GenderIdentity-${labelId}"]`);
-    await label.scrollIntoViewIfNeeded();
-    await label.click();
+    await questionContainer.getByText(gender, { exact: true }).click();
 
-    // "Other" gender option requires entering text in an input field and clicking the Next button
+    // "Other" gender option requires entering text
     if (gender === "Other") {
       const otherInput = this.page.getByTestId('question-other-text');
-      await otherInput.waitFor({ state: 'visible', timeout: 5000 });
       await otherInput.fill('Test gender identity');
-      // Clicks the visible Next button (the one in the current question context)
-      const visibleNextBtn = this.page.getByTestId('next-button').filter({ visible: true }).last();
-      await visibleNextBtn.click();
+      await this.nextButton.click();
     }
   }
 
@@ -147,12 +137,10 @@ class SignupPage {
   }
 
   async selectAge(age) {
-    await this.ageTrigger.waitFor({ state: 'visible'});
     await this.ageTrigger.click();
+    await this.countryDropdownOptions.waitFor({ state: 'visible' });
 
-    await this.menuContainer.waitFor({ state: 'visible' });
-    const option = this.menuContainer.getByRole('option', { name: age.toString(), exact: true });
-
+    const option = this.page.getByRole('option', { name: age.toString(), exact: true });
     await option.scrollIntoViewIfNeeded();
     await option.click();
   }
@@ -161,7 +149,7 @@ class SignupPage {
   async startQuestionnaireBasics(persona) {
     await this.navigate();
     await this.selectIndividualTherapy();
-    await this.selectCountry('United States');
+    await this.selectCountry(persona.country);
     await this.proceed();
 
     await this.selectGender(persona.gender);
@@ -175,20 +163,35 @@ class SignupPage {
   }
 
   async selectSexualOrientation(identity) {
-    // Options that require clicking "More options" first
+    // Map persona values to display text
+    const identityTextMap = {
+      'Straight': 'Straight',
+      'Gay': 'Gay',
+      'Lesbian': 'Lesbian',
+      'BiPan': 'Bi or Pan',
+      'BiOrPan': 'Bi or Pan',
+      'PreferNotToSay': 'Prefer not to say',
+      'Questioning': 'Questioning',
+      'Queer': 'Queer',
+      'Asexual': 'Asexual',
+      'DoNotKnow': "I don't know",
+      'Other': 'Other'
+    };
+
+    // More Options orientations require clicking the button first
     const moreOptionsOrientations = ["Questioning", "Queer", "Asexual", "DoNotKnow", "Other"];
 
+    // Scope to identity question container
+    const questionContainer = this.page.getByRole('listitem').filter({
+      has: this.identifyPrompt
+    });
+
     if (moreOptionsOrientations.includes(identity)) {
-      // Get the last visible "More options" button (the one for the current orientation question)
-      const moreOptionsBtn = this.page.getByRole('button', { name: 'More options' }).filter({ visible: true }).last();
-      await moreOptionsBtn.scrollIntoViewIfNeeded();
-      await moreOptionsBtn.click();
-      await this.page.waitForTimeout(500);
+      await questionContainer.getByRole('button', { name: 'More options' }).click();
     }
 
-    const label = this.page.locator(`label[for="question-Identify-${identity}"]`);
-    await label.scrollIntoViewIfNeeded();
-    await label.click();
+    const displayText = identityTextMap[identity] || identity;
+    await questionContainer.getByText(displayText, { exact: true }).click();
   }
 
   async waitForLGBTQSpecialistQuestion(){
@@ -197,25 +200,36 @@ class SignupPage {
   }
 
   async selectLGBTQSpecialist(match) {
-    // Values: 'Yes', 'No'
-    const selector = `label[for="question-MatchLGBTQ-${match}"]`;
-    const label = this.page.locator(selector);
-
-    await label.scrollIntoViewIfNeeded();
-    await label.click();
+    // Values: 'Yes', 'No' - scope to the LGBTQ question container using role
+    const questionContainer = this.page.getByRole('listitem').filter({
+      has: this.lgbtqSpecialistPrompt
+    });
+    await questionContainer.getByText(match, { exact: true }).click();
   }
-  
+
   async waitForRelationshipQuestion(){
     await expect(this.relationshipStatusPrompt).toBeVisible({ timeout: 10000});
     await expect(this.relationshipStatusPrompt).toHaveText('What is your relationship status?')
   }
 
   async selectRelationship(status) {
-    const selector = `label[for="question-RelationshipStatus-${status}"]`;
-    const label = this.page.locator(selector);
+    // Map persona values to display text
+    const statusTextMap = {
+      'Single': 'Single',
+      'InARelationship': 'In a relationship',
+      'Married': 'Married',
+      'Divorced': 'Divorced',
+      'Widowed': 'Widowed',
+      'Other': 'Other'
+    };
 
-    await label.scrollIntoViewIfNeeded();
-    await label.click();
+    // Scope to relationship question container
+    const questionContainer = this.page.getByRole('listitem').filter({
+      has: this.relationshipStatusPrompt
+    });
+
+    const displayText = statusTextMap[status] || status;
+    await questionContainer.getByText(displayText, { exact: true }).click();
   }
 
   async waitForReligiousImportanceQuestion() {
@@ -224,12 +238,21 @@ class SignupPage {
   }
 
   async selectReligiousImportance(importance) {
-    // Values: 'VeryImportant', 'Important', 'SomewhatImportant', 'NotImportantAtAll'
-    const selector = `label[for="question-HowImportantIsReligion-${importance}"]`;
-    const label = this.page.locator(selector);
+    // Map persona values to display text
+    const importanceTextMap = {
+      'VeryImportant': 'Very important',
+      'Important': 'Important',
+      'SomewhatImportant': 'Somewhat important',
+      'NotImportantAtAll': 'Not important at all'
+    };
 
-    await label.scrollIntoViewIfNeeded();
-    await label.click();
+    // Scope to religious importance question container
+    const questionContainer = this.page.getByRole('listitem').filter({
+      has: this.religousImportancePrompt
+    });
+
+    const displayText = importanceTextMap[importance] || importance;
+    await questionContainer.getByText(displayText, { exact: true }).click();
   }
 
   async waitForReligionQuestion() {
@@ -238,11 +261,25 @@ class SignupPage {
   }
 
   async selectReligion(religion) {
-    const selector = `label[for="question-ReligionFromHowImportantIsReligion-${religion}"]`;
-    const label = this.page.locator(selector);
+    // Map persona values to display text
+    const religionTextMap = {
+      'Christianity': 'Christianity',
+      'Judaism': 'Judaism',
+      'Islam': 'Islam',
+      'Hinduism': 'Hinduism',
+      'Buddhism': 'Buddhism',
+      'Other': 'Other',
+      'None': 'None',
+      'PreferNotToSay': 'Prefer not to say'
+    };
 
-    await label.scrollIntoViewIfNeeded();
-    await label.click();
+    // Scope to religion question container
+    const questionContainer = this.page.getByRole('listitem').filter({
+      has: this.religiousIdentityPrompt
+    });
+
+    const displayText = religionTextMap[religion] || religion;
+    await questionContainer.getByText(displayText, { exact: true }).click();
   }
 
   // Christian-specific branch (only appears if Christianity is selected as a religion)
@@ -252,12 +289,11 @@ class SignupPage {
   }
 
   async selectChristianTherapy(preference) {
-    // Values: 'Yes', 'No'
-    const selector = `label[for="question-MatchChristian-${preference}"]`;
-    const label = this.page.locator(selector);
-
-    await label.scrollIntoViewIfNeeded();
-    await label.click();
+    // Values: 'Yes', 'No' - scope to the Christian therapy question container
+    const questionContainer = this.page.getByRole('listitem').filter({
+      has: this.christianTherapyPrompt
+    });
+    await questionContainer.getByText(preference, { exact: true }).click();
   }
 
   // Spiritual question (appears after religion prompt)
@@ -267,12 +303,11 @@ class SignupPage {
   }
 
   async selectSpiritual(answer) {
-    // Values: 'Yes', 'No'
-    const selector = `label[for="question-IsSpiritual-${answer}"]`;
-    const label = this.page.locator(selector);
-
-    await label.scrollIntoViewIfNeeded();
-    await label.click();
+    // Values: 'Yes', 'No' - scope to the spiritual question container
+    const questionContainer = this.page.getByRole('listitem').filter({
+      has: this.spiritualPrompt
+    });
+    await questionContainer.getByText(answer, { exact: true }).click();
   }
 
   // Previous therapy question
@@ -281,12 +316,11 @@ class SignupPage {
   }
 
   async selectPreviousTherapy(answer) {
-    // Values: 'Yes', 'No'
-    const selector = `label[for="question-PreviousTherapy-${answer}"]`;
-    const label = this.page.locator(selector);
-
-    await label.scrollIntoViewIfNeeded();
-    await label.click();
+    // Values: 'Yes', 'No' - scope to the previous therapy question container
+    const questionContainer = this.page.getByRole('listitem').filter({
+      has: this.previousTherapyPrompt
+    });
+    await questionContainer.getByText(answer, { exact: true }).click();
   }
 
   // BetterHelp usage question (only appears if previousTherapy is Yes)
@@ -295,12 +329,11 @@ class SignupPage {
   }
 
   async selectUsedBetterHelp(answer) {
-    // Values: 'Yes', 'No'
-    const selector = `label[for="question-PreviousTherapyBetterhelp-${answer}"]`;
-    const label = this.page.locator(selector);
-
-    await label.scrollIntoViewIfNeeded();
-    await label.click();
+    // Values: 'Yes', 'No' - scope to the BetterHelp usage question container
+    const questionContainer = this.page.getByRole('listitem').filter({
+      has: this.usedBetterHelpPrompt
+    });
+    await questionContainer.getByText(answer, { exact: true }).click();
   }
 
   // Login flow (appears if usedBetterHelp is Yes)
@@ -310,8 +343,9 @@ class SignupPage {
   }
 
   async login(email, password) {
-    await this.emailInput.waitFor({ state: 'visible', timeout: 10000 });
+    await this.emailInput.click();
     await this.emailInput.fill(email);
+    await this.passwordInput.click();
     await this.passwordInput.fill(password);
     await this.loginButton.click();
   }
@@ -326,9 +360,8 @@ class SignupPage {
     // if the Login succeeded we will reach the dashboard OR 2FA page
     await expect(
       this.loggedInHeader.or(this.twoFactorPrompt)
-    ).toBeVisible({ timeout: 10000 });
+    ).toBeVisible({ timeout: 15000 });
   }
-
 
 }
 

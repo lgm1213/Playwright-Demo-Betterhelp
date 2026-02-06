@@ -2,8 +2,12 @@
 const { defineConfig, devices } = require('@playwright/test');
 require('dotenv').config();
 
+const today = new Date();
+const dateDir = `${today.getMonth() + 1}.${String(today.getDate()).padStart(2, '0')}.${today.getFullYear()}`;
+
 module.exports = defineConfig({
-  testDir: './tests', // Make sure this matches your folder name
+  testDir: './tests',
+  outputDir: `./test-results/${dateDir}`,
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */

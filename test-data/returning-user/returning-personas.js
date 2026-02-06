@@ -11,7 +11,7 @@ const returningUserLogin = createPersona('Returning_User_Login', {
   spiritual: 'No',
   previousTherapy: 'Yes',
   usedBetterHelp: 'Yes',
-  // Credentials will load from environment variables
+  country: 'United States',
   email: process.env.BETTERHELP_EMAIL,
   password: process.env.BETTERHELP_PASSWORD,
 });
